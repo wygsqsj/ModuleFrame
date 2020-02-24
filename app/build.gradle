@@ -1,0 +1,137 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion rootProject.ext.android.compileSdkVersion
+
+    defaultConfig {
+        applicationId rootProject.ext.android.applicationId
+        minSdkVersion rootProject.ext.android.minSdkVersion
+        targetSdkVersion rootProject.ext.android.targetSdkVersion
+        versionCode rootProject.ext.android.versionCode
+        versionName rootProject.ext.android.versionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        multiDexEnabled true
+
+        //设置支持的SO库架构
+        ndk {
+            abiFilters "armeabi", "armeabi-v7a", "x86"
+        }
+        //只保留中英文字符资源
+        resConfigs "zh", "en"
+    }
+
+    //签名相关
+    signingConfigs {
+        release {
+            keyAlias rootProject.ext.keyAlias
+            keyPassword rootProject.ext.keyPassword
+            storeFile file(rootProject.ext.gradleFilePath)
+            storePassword rootProject.ext.storePassword
+        }
+    }
+
+    buildTypes {
+        debug {
+            crunchPngs false //关闭PNG文件合法性检测, 以加快构建
+            ext.alwaysUpdateBuildId = false
+            zipAlignEnabled false    //开启压缩对齐，加快APP和系统的交互
+            shrinkResources false  // 移除无用的resource文件
+
+            signingConfig signingConfigs.release
+            buildConfigField("int", "CONTEXT_FRAME", "${rootProject.ext.CONTEXT_FRAME}")
+            buildConfigField("int", "CONTEXT_TEST", "1")
+            buildConfigField("int", "CONTEXT_PREPARE", "2")
+            buildConfigField("int", "CONTEXT_RELEASE", "3")
+            buildConfigField('boolean', 'IS_DEBUG', "${rootProject.ext.CONFIG_IS_DEBUG}")
+        }
+
+        release {
+            minifyEnabled true   //混淆
+            shrinkResources true // 移除无用的resource文件
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            buildConfigField("int", "CONTEXT_FRAME", "${rootProject.ext.CONTEXT_FRAME}")
+            buildConfigField("int", "CONTEXT_TEST", "1")
+            buildConfigField("int", "CONTEXT_PREPARE", "2")
+            buildConfigField("int", "CONTEXT_RELEASE", "3")
+            buildConfigField('boolean', 'IS_DEBUG', "${rootProject.ext.CONFIG_IS_DEBUG}")
+        }
+    }
+
+    packagingOptions {
+        //Glide与RxJava冲突
+        exclude 'META-INF/rxjava.properties'
+    }
+
+    compileOptions {
+        sourceCompatibility config_javaVersion
+        targetCompatibility config_javaVersion
+    }
+
+    aaptOptions {
+        // cruncherEnabled false //gradle3.1已弃用，在buildType中使用crunchPngs代替
+        cruncherProcesses = 0 ////PNG优化线程
+    }
+
+    //跳过Lint和Test相关的task, 以加速编译
+    if (CONFIG_IS_DEBUG) {
+        gradle.taskGraph.whenReady {
+            tasks.each { task ->
+                if (task.name.contains("Test") || task.name.contains("Lint")) {
+                    task.enabled = false
+                }
+            }
+        }
+    }
+
+    dexOptions {
+        //最大栈内存
+        javaMaxHeapSize "4g"
+        //预编译
+        preDexLibraries = true
+        //最大的线程数
+        maxProcessCount = 4
+    }
+
+    //apk命名
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                def lineType = ""
+                if ("${rootProject.ext.CONTEXT_FRAME}" == "1") {
+                    lineType = "-test"
+                } else if ("${rootProject.ext.CONTEXT_FRAME}" == "2") {
+                    lineType = "-prepare"
+                } else if ("${rootProject.ext.CONTEXT_FRAME}" == "3") {
+                    lineType = "-beta"
+                }
+
+                if (variant.buildType.name == "release") {
+                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + "-${buildTime()}" + ".apk")
+                    outputFileName = fileName
+                } else if (variant.buildType.name == "debug") {
+                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + "-${buildTime()}" + ".apk")
+                    outputFileName = fileName
+                } else {
+                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + ".apk")
+                    outputFileName = fileName
+                }
+            }
+        }
+    }
+}
+
+//时间戳
+def buildTime() {
+    return new Date().format("yyyyMMddHHmmss")
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(':common')
+    if (!isModule.toBoolean()) {
+        implementation project(':home')
+    }
+}

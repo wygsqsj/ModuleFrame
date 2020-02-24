@@ -1,0 +1,74 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+android {
+    compileSdkVersion rootProject.android.compileSdkVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.android.minSdkVersion
+        targetSdkVersion rootProject.ext.android.targetSdkVersion
+        versionCode rootProject.ext.android.versionCode
+        versionName rootProject.ext.android.versionName
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'consumer-rules.pro'
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                includeCompileClasspath = true
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+    //androidX
+    api rootProject.ext.dependencies.androidX
+    api rootProject.ext.dependencies.supportV4
+    api rootProject.ext.dependencies.material
+    api rootProject.ext.dependencies.recyclerview
+    api rootProject.ext.dependencies.constraintlayout
+    //kotlin
+    api rootProject.ext.dependencies.kotlin
+    //gson
+    api rootProject.ext.dependencies.gson
+    //ARouter路由
+    api rootProject.ext.dependencies.arouter_api
+    api rootProject.ext.dependencies.arouter_compiler
+    //ButterKnife
+    api rootProject.ext.dependencies.butterknife
+    annotationProcessor rootProject.ext.dependencies.butterknife_compiler
+    //glide
+    api rootProject.ext.dependencies.glide
+    api rootProject.ext.dependencies.glide_compiler
+    api rootProject.ext.dependencies.glide_transformations
+    //baner
+    api rootProject.ext.dependencies.banner
+    //smartRefresh
+    api rootProject.ext.dependencies.smartRefresh
+    //eventBus
+    api rootProject.ext.dependencies.eventBus
+    //RxJava
+    api rootProject.ext.dependencies.rxjava
+    api rootProject.ext.dependencies.rxandroid
+    //okhttp
+    api rootProject.ext.dependencies.okhttp
+    api rootProject.ext.dependencies.logging_interceptor
+    //retrofit
+    api rootProject.ext.dependencies.retrofit
+    api rootProject.ext.dependencies.retrofit_converter_gson
+    api rootProject.ext.dependencies.retrofit_converter_scalars
+    api rootProject.ext.dependencies.retrofit_rxjava_adapter
+}

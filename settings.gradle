@@ -1,0 +1,2 @@
+include ':app', ':home', ':my', ':login', ':common'
+rootProject.name='ModuleFrame'

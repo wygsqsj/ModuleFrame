@@ -1,4 +1,7 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion rootProject.ext.android.compileSdkVersion
@@ -19,6 +22,13 @@ android {
         }
         //只保留中英文字符资源
         resConfigs "zh", "en"
+
+        //ARouter
+        kapt {
+            arguments {
+                arg("AROUTER_MODULE_NAME", project.getName())
+            }
+        }
     }
 
     //签名相关
@@ -59,6 +69,33 @@ android {
         }
     }
 
+    //apk命名
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                def lineType = ""
+                if ("${rootProject.ext.CONTEXT_FRAME}" == "1") {
+                    lineType = "-test"
+                } else if ("${rootProject.ext.CONTEXT_FRAME}" == "2") {
+                    lineType = "-prepare"
+                } else if ("${rootProject.ext.CONTEXT_FRAME}" == "3") {
+                    lineType = "-beta"
+                }
+
+                if (variant.buildType.name == "release") {
+                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + "-${buildTime()}" + ".apk")
+                    outputFileName = fileName
+                } else if (variant.buildType.name == "debug") {
+                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + "-${buildTime()}" + ".apk")
+                    outputFileName = fileName
+                } else {
+                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + ".apk")
+                    outputFileName = fileName
+                }
+            }
+        }
+    }
     packagingOptions {
         //Glide与RxJava冲突
         exclude 'META-INF/rxjava.properties'
@@ -93,35 +130,8 @@ android {
         //最大的线程数
         maxProcessCount = 4
     }
-
-    //apk命名
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            def outputFile = output.outputFile
-            if (outputFile != null && outputFile.name.endsWith('.apk')) {
-                def lineType = ""
-                if ("${rootProject.ext.CONTEXT_FRAME}" == "1") {
-                    lineType = "-test"
-                } else if ("${rootProject.ext.CONTEXT_FRAME}" == "2") {
-                    lineType = "-prepare"
-                } else if ("${rootProject.ext.CONTEXT_FRAME}" == "3") {
-                    lineType = "-beta"
-                }
-
-                if (variant.buildType.name == "release") {
-                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + "-${buildTime()}" + ".apk")
-                    outputFileName = fileName
-                } else if (variant.buildType.name == "debug") {
-                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + "-${buildTime()}" + ".apk")
-                    outputFileName = fileName
-                } else {
-                    def fileName = outputFile.name.replace(".apk", "-v${variant.versionName}" + lineType + ".apk")
-                    outputFileName = fileName
-                }
-            }
-        }
-    }
 }
+
 
 //时间戳
 def buildTime() {
@@ -131,7 +141,13 @@ def buildTime() {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':common')
-    if (!isModule.toBoolean()) {
+    if (!homeIsModule.toBoolean()) {
+        implementation project(':home')
+    }
+    if (!myIsModule.toBoolean()) {
+        implementation project(':home')
+    }
+    if (!loginIsModule.toBoolean()) {
         implementation project(':home')
     }
 }

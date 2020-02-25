@@ -1,6 +1,5 @@
 // 项目的 build.gradle 中配置模块是否独立运行
-def isSingleCompile = false
-if (isSingleCompile) {
+if (homeIsModule.toBoolean()) {
     apply plugin: 'com.android.application'
 } else {
     apply plugin: 'com.android.library'
@@ -19,10 +18,15 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
 
-        //ARouter
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [moduleName: project.getName()]
+            }
+        }
+        //ARouter
+        kapt {
+            arguments {
+                arg("AROUTER_MODULE_NAME", project.getName())
             }
         }
     }
@@ -30,7 +34,7 @@ android {
 
     sourceSets {
         main {
-            if (isSingleCompile) {
+            if (homeIsModule.toBoolean()) {
                 manifest.srcFile 'src/main/module/AndroidManifest.xml'
             } else {
                 manifest.srcFile 'src/main/AndroidManifest.xml'
@@ -52,6 +56,7 @@ android {
 
 
 dependencies {
-    annotationProcessor rootProject.ext.dependencies.arouter_compiler
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    kapt rootProject.ext.dependencies.arouter_compiler
     implementation project(':common')
 }

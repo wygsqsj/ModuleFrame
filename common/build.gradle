@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 android {
@@ -26,7 +27,35 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility config_javaVersion
+        targetCompatibility config_javaVersion
+    }
 
+    aaptOptions {
+        // cruncherEnabled false //gradle3.1已弃用，在buildType中使用crunchPngs代替
+        cruncherProcesses = 0 ////PNG优化线程
+    }
+
+    //跳过Lint和Test相关的task, 以加速编译
+    if (CONFIG_IS_DEBUG) {
+        gradle.taskGraph.whenReady {
+            tasks.each { task ->
+                if (task.name.contains("Test") || task.name.contains("Lint")) {
+                    task.enabled = false
+                }
+            }
+        }
+    }
+
+    dexOptions {
+        //最大栈内存
+        javaMaxHeapSize "4g"
+        //预编译
+        preDexLibraries = true
+        //最大的线程数
+        maxProcessCount = 4
+    }
 }
 
 dependencies {
@@ -46,13 +75,8 @@ dependencies {
     api rootProject.ext.dependencies.gson
     //ARouter路由
     api rootProject.ext.dependencies.arouter_api
-    api rootProject.ext.dependencies.arouter_compiler
-    //ButterKnife
-    api rootProject.ext.dependencies.butterknife
-    annotationProcessor rootProject.ext.dependencies.butterknife_compiler
     //glide
     api rootProject.ext.dependencies.glide
-    api rootProject.ext.dependencies.glide_compiler
     api rootProject.ext.dependencies.glide_transformations
     //baner
     api rootProject.ext.dependencies.banner
